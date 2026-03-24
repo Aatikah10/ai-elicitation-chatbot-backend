@@ -8,7 +8,14 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
-    role: Optional[str] = "viewer"
+    role: Optional[str] = "user"
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if v not in ["admin", "user"]:
+            raise ValueError("Role must be either 'admin' or 'user'")
+        return v
 
     @field_validator("name")
     @classmethod
@@ -16,6 +23,17 @@ class UserCreate(BaseModel):
         if not re.match(r"^[a-zA-Z\s]+$", v):
             raise ValueError("Name must only contain letters and spaces")
         return v.strip()
+
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError("Password must contain at least one special character")
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
